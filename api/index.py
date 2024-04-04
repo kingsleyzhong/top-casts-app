@@ -9,9 +9,15 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi import APIRouter, HTTPException
 import marqo
+import supabase
+
 
 app = FastAPI()
 
+
+SUPABASE_URL = "https://qxatanahnvldpymprcio.supabase.co"
+SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4YXRhbmFobnZsZHB5bXByY2lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTAwNDc0OTksImV4cCI6MjAyNTYyMzQ5OX0.XdBczoMIoeE5178TcTigXebb4cIsj69tDLSHIfZr1cM"
+sb = supabase.create_client(SUPABASE_URL, SUPABASE_API_KEY)
 
 # db = firestore.Client(project="top-casts")
 # imgs = db.collection("images")
@@ -99,19 +105,30 @@ def search(
     # print(query_weights, lower_rating, upper_rating)
     # print(rating_range)
     # print(f"rating:[{rating_range[0]} TO {rating_range[1]}]" if rating_range else None)
+    filter_string = f"rating:[{lower_rating} TO {upper_rating}]"
 
     results = index.search(
         query_weights,
         offset=offset,
         limit=limit,
         device="cuda",
-        filter_string=(f"rating:[{lower_rating} TO {upper_rating}]"),
+        filter_string=filter_string,
     )
 
     res = results["hits"]
     BASE_URL = "https://assets.top-casts.com/raw_images/"
     for item in res:
         item["src"] = BASE_URL + item["_id"] + "." + item["image"].split(".")[-1]
+
+    sb.table("search_logs").insert(
+        {
+            "query_weights": query_weights,
+            "filter_string": filter_string,
+            "offset": offset,
+            "limit": limit,
+            "results": res,
+        }
+    ).execute()
 
     # return [
     #     BASE_URL + res["_id"] + "." + res["image"].split(".")[-1]
