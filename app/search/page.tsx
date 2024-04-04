@@ -11,45 +11,43 @@ import {
   Flex,
   HStack,
   Input,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
   SimpleGrid,
   Stack,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
-import preloadedImages from "./preloadedImages";
+
+const preloadedImages = [
+  "/api/static/Sorted Pictures/4S/9b424ba3bbcbb608d119b916f617d725768efad2.png",
+  "/api/static/Sorted Pictures/5S/4099577141_11bb8798f7_50530951042_o.jpg",
+  "/api/static/Sorted Pictures/4S/android-asset-cd4a47f893009fa34be58d88fc1f889caaaef8633c76e4bc24d4b5130d38df35.jpg",
+  "/api/static/Sorted Pictures/4S/image_1.jpeg",
+  "/api/static/4KStogram/4K Stogram/top.casts/2022-07-18 12.02.20 2885239223489970260_1953845700.jpg",
+  "/api/static/4KStogram/4K Stogram/top.casts/2020-07-16 00.39.32 2354359729337490402_34456773325.jpg",
+  "/api/static/4KStogram/4K Stogram/top.casts/2022-07-18 12.02.20 2885239223490149576_1953845700.jpg",
+  "/api/static/Sorted Pictures/4S/abigail-llwc.jpg",
+  "/api/static/4KStogram/4K Stogram/top.casts/2023-01-18 17.18.32 3018787303903945709_33216583683.jpg",
+  "/api/static/Sorted Pictures/4S/pink_llc6.jpg",
+  "/api/static/Sorted Pictures/4S/breanne-slc.jpg",
+  "/api/static/Sorted Pictures/4S/shop_pics_7_110.jpg",
+  "/api/static/4KStogram/4K Stogram/top.casts/2021-06-22 22.37.50 2602171779357415629_4488480470.jpg",
+  "/api/static/Sorted Pictures/4S/mod-2_7189436354_o.jpg",
+  "/api/static/Sorted Pictures/5S/abbey-llc.jpg",
+  "/api/static/Sorted Pictures/4S/diana_-_bootsausflug_mit_llc_-_teil_4-3.jpg",
+  "/api/static/Sorted Pictures/4S/48031005503_2790975666_o.jpg",
+  "/api/static/4KStogram/4K Stogram/top.casts/2023-05-22 15.43.42 3108581571039698983_58752113401.jpg",
+  "/api/static/Sorted Pictures/4S/jessy_-_spaziergang_mit_gips-schlinge-2.jpg",
+  "/api/static/Sorted Pictures/4S/bee-slc.jpg",
+];
 
 const ImageContext = createContext();
 
-const fetchImages = async (
-  search: string = "pink long leg cast, crutches, forest, blond",
-  theme: string = "",
-  negative: string = "",
-  ratingRange = [0, 5],
-  offset: number = 0
-) => {
+const fetchImages = async (search: string, offset: number = 0) => {
   try {
     // Keep alive
-    console.log({
-      query: search,
-      offset: offset,
-      themes: theme,
-      negs: negative,
-      lowerRating: ratingRange[0],
-      upperRating: ratingRange[1],
-    });
-
-    const response = await axios.get("/api/search", {
+    const response = await axios.get("/api/search/v1", {
       params: {
         query: search,
         offset: offset,
-        themes: theme,
-        negs: negative,
-        lower_rating: Number(ratingRange[0]),
-        upper_rating: Number(ratingRange[1]),
       },
     });
     const data = response.data;
@@ -63,13 +61,11 @@ const fetchImages = async (
   }
 };
 
-function ImageView({ image_data, key, searchFunction }) {
+function ImageView({ image_src, key, searchFunction }) {
   const [buttonShown, setButtonShown] = useState(false);
 
   const { search, setSearch } = useContext(ImageContext);
   const { images, setImages } = useContext(ImageContext);
-
-  // console.log(image_data);
 
   return (
     <div
@@ -90,7 +86,7 @@ function ImageView({ image_data, key, searchFunction }) {
     >
       <img
         className="w-full h-full object-contain"
-        src={image_data.src}
+        src={image_src}
         alt={`image-${key}`}
       />
       <div className="absolute bottom-0 -translate-y-full left-1/2 -translate-x-1/2 z-20 text-white p-2">
@@ -113,15 +109,19 @@ function ImageView({ image_data, key, searchFunction }) {
             size="sm"
             variant="solid"
           >
-            <a href={"/?query=" + image_data.src}>Search this image</a>
+            <a
+              href={
+                "/search?query=" +
+                image_src
+                  .replace("/api/static/", "/collection/")
+                  .replace(/ /g, "+")
+              }
+            >
+              Search this image
+            </a>
           </Button>
         )}
       </div>
-      {buttonShown && (
-        <div className="absolute top-2 right-2 z-20 text-white p-1 bg-green-800 rounded-xl">
-          {image_data.rating}
-        </div>
-      )}
     </div>
   );
 }
@@ -129,10 +129,6 @@ function ImageView({ image_data, key, searchFunction }) {
 export default function Home({ params, searchParams }) {
   const [images, setImages] = useState([]);
   const [search, setSearch] = useState("");
-  const [theme, setTheme] = useState("");
-  const [negative, setNegative] = useState("");
-  const [ratingLower, setRatingLower] = useState(0);
-  const [ratingUpper, setRatingUpper] = useState(5);
   const imageComponent = useRef();
 
   const router = useRouter();
@@ -154,23 +150,14 @@ export default function Home({ params, searchParams }) {
 
   const handleSearch = () => {
     // Set search query
-    router.push("/?query=" + search);
+    router.push("/search?query=" + search);
+
     setLoading(true);
-
-    console.log({
-      query: search,
-      themes: theme,
-      negs: negative,
-      rating_range: [ratingLower, ratingUpper],
+    console.log(search);
+    fetchImages(search).then((data) => {
+      setImages(data);
+      setLoading(false);
     });
-
-    // console.log(search);
-    fetchImages(search, theme, negative, [ratingLower, ratingUpper]).then(
-      (data) => {
-        setImages(data);
-        setLoading(false);
-      }
-    );
   };
 
   const searchFunction = (image_src) => {
@@ -197,7 +184,7 @@ export default function Home({ params, searchParams }) {
       </button>
 
       <Container maxW="100vw">
-        <Container maxW={1000}>
+        <Container>
           <HStack>
             <Input
               placeholder="pink long leg cast, crutches, forest, blond"
@@ -209,7 +196,6 @@ export default function Home({ params, searchParams }) {
                 }
               }}
             />
-
             <Button
               onClick={handleSearch}
               colorScheme="blue"
@@ -220,73 +206,6 @@ export default function Home({ params, searchParams }) {
               Search
             </Button>
           </HStack>
-          <Flex className="flex-wrap">
-            <Input
-              minWidth={200}
-              maxWidth={300}
-              placeholder="See more of"
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch();
-                }
-              }}
-            />
-            <Input
-              minWidth={200}
-              maxWidth={300}
-              placeholder="See less of"
-              value={negative}
-              onChange={(e) => setNegative(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch();
-                }
-              }}
-            />
-            <NumberInput
-              minWidth={85}
-              maxWidth={100}
-              defaultValue={2}
-              precision={2}
-              step={0.25}
-              min={0}
-              max={ratingUpper}
-              value={ratingLower}
-              onChange={(e) => {
-                // let range = ratingRange;
-                // range[0] = Number(e);
-                // console.log("Range", range);
-                // setRatingRange(range);
-                // console.log(ratingRange);
-                setRatingLower(e);
-              }}
-            >
-              <NumberInputField />
-              <NumberInputStepper>
-                <NumberIncrementStepper />
-                <NumberDecrementStepper />
-              </NumberInputStepper>
-            </NumberInput>
-            <NumberInput
-              minWidth={85}
-              maxWidth={100}
-              defaultValue={5}
-              precision={2}
-              step={0.25}
-              min={ratingLower}
-              max={5}
-              value={ratingUpper}
-              onChange={(e) => setRatingUpper(e)}
-            >
-              <NumberInputField />
-              <NumberInputStepper>
-                <NumberIncrementStepper />
-                <NumberDecrementStepper />
-              </NumberInputStepper>
-            </NumberInput>
-          </Flex>
         </Container>
 
         {/* <img
@@ -300,10 +219,10 @@ export default function Home({ params, searchParams }) {
         <ImageContext.Provider value={{ images, setImages, search, setSearch }}>
           <div className="flex flex-wrap gap-2 mt-4 w-full justify-center">
             {images &&
-              images.map((image_data, key) => (
+              images.map((image_src, key) => (
                 <ImageView
                   key={key}
-                  image_data={image_data}
+                  image_src={image_src}
                   searchFunction={searchFunction}
                 />
               ))}
@@ -314,13 +233,7 @@ export default function Home({ params, searchParams }) {
           <Center>
             <Button
               onClick={() => {
-                fetchImages(
-                  search,
-                  theme,
-                  negative,
-                  [ratingLower, ratingUpper],
-                  images.length
-                ).then((data) => {
+                fetchImages(search, images.length).then((data) => {
                   setImages(images.concat(data));
                 });
               }}
