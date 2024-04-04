@@ -10,34 +10,34 @@ mq = marqo.Client(url="http://search.top-casts.com")
 index = mq.index("top-casts-structured")
 
 
-@router.get("/api/search/v1")
-def search_v1(
-    query: str = "Random cast images",
-    themes: str = None,
-    negs: str = None,
-    offset: int = 0,
-    limit: int = 20,
-):
+# @router.get("/api/search/v1")
+# def search_v1(
+#     query: str = "Random cast images",
+#     themes: str = None,
+#     negs: str = None,
+#     offset: int = 0,
+#     limit: int = 20,
+# ):
 
-    if len(rating_range) not in (0, 2):
-        raise HTTPException(status_code=403, detail="Range should be 2 values")
+#     if len(rating_range) not in (0, 2):
+#         raise HTTPException(status_code=403, detail="Range should be 2 values")
 
-    query_weights = {query: 1.0}
-    if themes:
-        query_weights[themes] = 0.75
-    if negs:
-        query_weights[negs] = -1.1
+#     query_weights = {query: 1.0}
+#     if themes:
+#         query_weights[themes] = 0.75
+#     if negs:
+#         query_weights[negs] = -1.1
 
-    results = index.search(
-        query_weights,
-        offset=offset,
-        limit=limit,
-        device="cuda",
-        filter_string=(
-            f"rating:[{rating_range[0]} TO {rating_range[1]}]" if rating_range else None
-        ),
-    )
-    return [PATH_BASE + res["image"][11:] for res in results["hits"]]
+#     results = index.search(
+#         query_weights,
+#         offset=offset,
+#         limit=limit,
+#         device="cuda",
+#         filter_string=(
+#             f"rating:[{rating_range[0]} TO {rating_range[1]}]" if rating_range else None
+#         ),
+#     )
+#     return [PATH_BASE + res["image"][11:] for res in results["hits"]]
 
 
 @router.get("/api/search")
