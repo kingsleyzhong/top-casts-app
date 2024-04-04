@@ -62,9 +62,23 @@ index = mq.index("top-casts-structured")
 #     return [PATH_BASE + res["image"][11:] for res in results["hits"]]
 
 
+@app.get("/api/health")
+def healthCheck():
+    try:
+        res = index.health()
+        if res["inference"]["status"] == "green":
+            return {"status": True}
+        else:
+            return {"status": False}
+
+    except Exception as e:
+        print(e)
+        return {"status": False, "error": str(e)}
+
+
 @app.get("/api/search")
 def search(
-    query: str = "Random cast images",
+    query: str = "pink long leg cast, crutches, forest, blond",
     themes: str = None,
     negs: str = None,
     offset: int = 0,

@@ -19,10 +19,20 @@ import {
   SimpleGrid,
   Stack,
 } from "@chakra-ui/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import preloadedImages from "./preloadedImages";
 
 const ImageContext = createContext();
+const checkHealth = async () => {
+  try {
+    const response = await axios.get("/api/health");
+    const data = response.data;
+    return data.status ?? false;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};
 
 const fetchImages = async (
   search: string = "pink long leg cast, crutches, forest, blond",
@@ -126,7 +136,7 @@ function ImageView({ image_data, key, searchFunction }) {
   );
 }
 
-export default function Home({ params, searchParams }) {
+export default function Home() {
   const [images, setImages] = useState([]);
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState("");
@@ -134,19 +144,39 @@ export default function Home({ params, searchParams }) {
   const [ratingLower, setRatingLower] = useState(0);
   const [ratingUpper, setRatingUpper] = useState(5);
   const imageComponent = useRef();
+  const searchParams = useSearchParams();
+  const [health, setHealth] = useState(true);
+
+  const SearchParamToSetter = {
+    query: setSearch,
+    theme: setTheme,
+    negative: setNegative,
+    rating_lower: (value) => {
+      setRatingLower(Number(value));
+    },
+    rating_upper: (value) => {
+      setRatingUpper(Number(value));
+    },
+  };
 
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (searchParams.query) {
-      setSearch(searchParams.query);
-      console.log(searchParams.query);
-      fetchImages(searchParams.query).then((data) => {
-        setImages(data);
-        setLoading(false);
+    // Check health
+    checkHealth().then((status) => {
+      setHealth(status);
+    });
+
+    if (searchParams?.has("query")) {
+      searchParams.forEach((value, key) => {
+        const setterFunction = SearchParamToSetter[key]; // Use the key to get the setter function
+        if (setterFunction) {
+          setterFunction(value); // Pass the value to the setter function
+        }
       });
+      handleSearch();
     } else {
       setImages(preloadedImages);
     }
@@ -154,7 +184,14 @@ export default function Home({ params, searchParams }) {
 
   const handleSearch = () => {
     // Set search query
-    router.push("/?query=" + search);
+    const params = new URLSearchParams(searchParams?.toString());
+    params.set("query", search);
+    params.set("theme", theme);
+    params.set("negative", negative);
+    params.set("rating_lower", ratingLower.toString());
+    params.set("rating_upper", ratingUpper.toString());
+    router.push(`/?${params.toString()}`);
+
     setLoading(true);
 
     console.log({
@@ -184,7 +221,7 @@ export default function Home({ params, searchParams }) {
 
   // Create infinite scroll effect
 
-  return (
+  return health ? (
     <main className="p-4">
       {/* Scroll to top button */}
       <button
@@ -220,7 +257,7 @@ export default function Home({ params, searchParams }) {
               Search
             </Button>
           </HStack>
-          <Flex className="flex-wrap">
+          <Flex className="flex-wrap align-middle">
             <Input
               minWidth={200}
               maxWidth={300}
@@ -245,6 +282,7 @@ export default function Home({ params, searchParams }) {
                 }
               }}
             />
+            <p className="p-2">Rating:</p>
             <NumberInput
               minWidth={85}
               maxWidth={100}
@@ -336,5 +374,7 @@ export default function Home({ params, searchParams }) {
         {/* </SimpleGrid> */}
       </Container>
     </main>
+  ) : (
+    <h1>Server is temporarily down, sorry :(</h1>
   );
 }
