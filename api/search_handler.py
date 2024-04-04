@@ -1,9 +1,10 @@
 # from typing import List
-# from fastapi import APIRouter, HTTPException
-# import marqo
+from fastapi import APIRouter, HTTPException
+import marqo
 
 
-# router = APIRouter()
+router = APIRouter()
+handler = router
 
 # PATH_BASE = "/api/static"
 # mq = marqo.Client(url="http://search.top-casts.com")
