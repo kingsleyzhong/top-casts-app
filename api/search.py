@@ -17,7 +17,6 @@ def search_v1(
     negs: str = None,
     offset: int = 0,
     limit: int = 20,
-    rating_range: List[int | str] = [],
 ):
 
     if len(rating_range) not in (0, 2):
