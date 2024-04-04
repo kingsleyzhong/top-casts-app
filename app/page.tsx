@@ -143,6 +143,7 @@ export default function Home() {
   const [negative, setNegative] = useState("");
   const [ratingLower, setRatingLower] = useState(0);
   const [ratingUpper, setRatingUpper] = useState(5);
+  const [counter, setCounter] = useState(0);
   const imageComponent = useRef();
   const searchParams = useSearchParams();
   const [health, setHealth] = useState(true);
@@ -176,14 +177,18 @@ export default function Home() {
           setterFunction(value); // Pass the value to the setter function
         }
       });
-      handleSearch();
+      // handleSearch();
     } else {
       setImages(preloadedImages);
     }
+    setCounter(counter + 1);
   }, []);
 
   const handleSearch = () => {
     // Set search query
+    if (counter == 0) {
+      return;
+    }
     const params = new URLSearchParams(searchParams?.toString());
     params.set("query", search);
     params.set("theme", theme);
@@ -194,7 +199,7 @@ export default function Home() {
 
     setLoading(true);
 
-    console.log({
+    console.log("Being passed to function", {
       query: search,
       themes: theme,
       negs: negative,
@@ -209,6 +214,8 @@ export default function Home() {
       }
     );
   };
+
+  useEffect(handleSearch, [counter]);
 
   const searchFunction = (image_src) => {
     const searchQuery = image_src.replace("/api/static/", "/collection/");
