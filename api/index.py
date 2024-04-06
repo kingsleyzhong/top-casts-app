@@ -105,7 +105,9 @@ def search(
     # print(query_weights, lower_rating, upper_rating)
     # print(rating_range)
     # print(f"rating:[{rating_range[0]} TO {rating_range[1]}]" if rating_range else None)
-    filter_string = f"rating:[{lower_rating} TO {upper_rating}]"
+    filter_string = (
+        f"rating:[{lower_rating} TO {upper_rating}] AND NOT collections IN (5)"
+    )
 
     results = index.search(
         query_weights,
